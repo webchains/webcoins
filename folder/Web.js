@@ -250,7 +250,7 @@ class Web {
             });
         });
         this.app.post('/posts', this.upload, this.postCheck, async (req, res) => {
-            let post = await this.blockchain.postDB({address: md5(this.blockchain.address), text: req.body.text, media: req.file.filename});
+            let post = await this.blockchain.postDB({address: this.blockchain.address, text: req.body.text, media: req.file.filename});
             return res.status(200).json(post);
         });
         this.app.post('/transactions', async (req, res) => {
