@@ -123,9 +123,6 @@ class Web {
                 return res.sendFile(path.resolve(__dirname + '../base/dist/index.html')); // potential update
                 // return res.status(200).json('webcoin');
             });
-            this.app.get('/worker', (req, res) => {
-                return res.sendFile(path.resolve(__dirname + '../base/dist/worker.js'));
-            });
         } else if(this.index === 'standard'){
             this.app.get('/', (req, res) => {
                 // return res.sendFile(path.resolve(__dirname + '../base/dist/index.html')); // potential update
@@ -158,19 +155,22 @@ class Web {
             }
         });
         this.app.get('/data', (req, res) => {
-            return res.status(200).json({name: this.blockchain.name, checksum: this.blockchain.checksum, about: this.blockchain.about, current: this.blockchain.current, blocks: this.blockchain.current - 1, count: this.blockchain.count});
+            return res.status(200).json({genesisAddress: this.blockchain.genesisAddress, address: this.blockchain.address, name: this.blockchain.name, checksum: this.blockchain.checksum, about: this.blockchain.about, current: this.blockchain.current, blocks: this.blockchain.current - 1, count: this.blockchain.count});
         });
         this.app.get('/data/transactions/address/:address', async (req, res) => {
             let address = this.blockchain.ec.keyFromPrivate(req.params.address, 'hex').getPublic('hex');
             let transactions = await Transaction.find({$or: [{fromAddress: address}, {toAddress: address}]}).sort({createdAt: -1}).exec();
             return res.status(200).json(transactions);
         });
-        this.app.get('/data/transactions/address/:address/:page/:limit', async (req, res) => {
+        this.app.get('/data/transactions/address/:address/:page/:limit', (req, res) => {
             let address = this.blockchain.ec.keyFromPrivate(req.params.address, 'hex').getPublic('hex');
-            let pages = Number(req.params.page);
-            let limits = Number(req.params.limit);
-            let transactions = await Transaction.paginate({$or: [{fromAddress: address}, {toAddress: address}]}, {page: pages, limit: limits, sort: {createdAt: -1}}).then(res => {return res;}).catch(error => {return null;});
-            return res.status(200).json(transactions);
+            Transaction.paginate({$or: [{fromAddress: address}, {toAddress: address}]}, {page: Number(req.params.page), limit: Number(req.params.limit), sort: {createdAt: -1}}, (error, data) => {
+                if(error){
+                    return res.status(500).json('error');
+                } else if(data){
+                    return res.status(200).json(data);
+                }
+            });
         });
         this.app.get('/data/transactions/hash/:hash', async (req, res) => {
             let hash = req.params.hash;
@@ -184,29 +184,35 @@ class Web {
         });
         this.app.get('/data/blocks/index/:index', async (req, res) => {
             let index = Number(req.params.index);
-            let block = await Block.findOne({index: index});
+            let block = await Block.findOne({index: index}).exec();
             return res.status(200).json(block);
         });
         this.app.get('/data/block/chain/:page/:limit', async (req, res) => {
-            let pages = Number(req.params.page);
-            let limits = Number(req.params.limit);
-            let blocks = await Block.paginate({}, {sort: {createdAt: 1}, page: pages, limit: limits}).then(res => {return res;}).catch(error => {return null;});
-            return res.status(200).json(blocks);
+            Block.paginate({}, {sort: {createdAt: 1}, page: Number(req.params.page), limit: Number(req.params.limit)}, (error, data) => {
+                if(error){
+                    return res.status(500).json('error');
+                } else if(data){
+                    return res.status(200).json(data);
+                }
+            });
         });
         this.app.get('/data/tree/chain/:page/:limit', async (req, res) => {
-            let pages = Number(req.params.page);
-            let limits = Number(req.params.limit);
-            let trees = await Tree.paginate({}, {sort: {createdAt: 1}, page: pages, limit: limits}).then(res => {return res;}).catch(error => {return null;});
-            return res.status(200).json(trees);
+            Tree.paginate({}, {sort: {createdAt: 1}, page: Number(req.params.page), limit: Number(req.params.limit)}, (error, data) => {
+                if(error){
+                    return res.status(500).json('error');
+                } else if(data){
+                    return res.status(200).json(data);
+                }
+            });
         });
         this.app.get('/data/tree/root/:root', async (req, res) => {
             let root = req.params.root;
-            let tree = await Tree.findOne({transactionRoot: root}).then(res => {return res;}).catch(error => {return null;});
+            let tree = await Tree.findOne({transactionRoot: root}).exec();
             return res.status(200).json(tree);
         });
         this.app.get('/data/tree/hash/:hash', async (req, res) => {
             let hash = req.params.hash;
-            let tree = await Tree.findOne({hash: hash}).then(res => {return res;}).catch(error => {return null;});
+            let tree = await Tree.findOne({hash: hash}).exec();
             return res.status(200).json(tree);
         });
         this.app.post('/node', (req, res) => {
@@ -249,32 +255,39 @@ class Web {
                 }
             });
         });
+        this.app.get('/posts/:post', (req, res) => {
+            Post.findOne({_id: req.params.post}, (error, data) => {
+                if(error){
+                    return res.status(500).json('error');
+                } else if(data){
+                    return res.status(200).json(data);
+                } else if(!data){
+                    return res.status(400).json('error');
+                }
+            });
+        });
         this.app.post('/posts', this.upload, this.postCheck, async (req, res) => {
-            let post = await this.blockchain.postDB({address: this.blockchain.address, text: req.body.text, media: req.file.filename});
+            let post = await this.blockchain.postDB({title: req.body.title, text: req.body.text, media: req.file.filename, reply: []});
             return res.status(200).json(post);
         });
-        this.app.post('/transactions', async (req, res) => {
-            if(!req.body.main || typeof(req.body.main) !== 'string' || !req.body.address || typeof(req.body.address) !== 'string' || !req.body.amount || req.body.amount <= 0 || typeof(req.body.amount) !== "number"){
-                return res.status(400).json('error');
+        this.app.post('/posts/reply/:post', this.replyCheck, async (req, res) => {
+            let reply = await this.blockchain.replyDB({post: req.params.post, reply: req.body.text});
+            if(reply){
+                return res.status(200).json(reply);
             } else {
-                let main = this.blockchain.ec.keyFromPrivate(req.body.main, 'hex');
-                let publicMain = main.getPublic('hex');
-                let amount = req.body.amount;
-                let address = req.body.address;
-                let mainBalance = await this.blockchain.getBalance(publicMain);
-                if(mainBalance < amount){
-                    return res.status(400).json('amount is higher than your balance');
-                } else {
-                    let transaction = new Transactions(publicMain, address, amount);
-                    transaction.signTransaction(main);
-                    if(Transactions.isTransactionValid(transaction)){
-                        this.broadcastTransaction({transaction: transaction, peer: this.address});
-                        this.blockchain.pending.push(transaction);
-                        return res.status(200).json(transaction);
-                    } else {
-                        return res.status(400).json('invalid transaction');
-                    }
-                }
+                return res.status(400).json('error');
+            }
+        });
+        this.app.post('/transactions', this.handleTransaction, this.handleBalance, async (req, res) => {
+            let main = this.blockchain.ec.keyFromPrivate(req.body.main, 'hex');
+            let transaction = new Transactions(main.getPublic('hex'), req.body.address, req.body.amount);
+            transaction.signTransaction(main);
+            if(Transactions.isTransactionValid(transaction)){
+                this.broadcastTransaction({transaction: transaction, peer: this.address});
+                this.blockchain.pending.push(transaction);
+                return res.status(200).json(transaction);
+            } else {
+                return res.status(400).json('invalid transaction');
             }
         });
         this.app.post('/transfer/verify/in', this.handleTransferNode, this.chainCheck, async (req, res) => {
@@ -349,7 +362,7 @@ class Web {
             if(!proof.validDifficulty(this.blockchain.externalState.difficulty) || !proof.validProof()){
                 return res.status(400).json('no');
             } else {
-                let transaction = new Transactions('REWARD', proof.address, this.blockchain.externalState.reward);
+                let transaction = new Transactions('GIFT', proof.address, this.blockchain.externalState.reward);
                 this.broadcastTransaction({transaction: transaction, peer: this.address});
                 this.blockchain.pending.push(transaction);
                 return res.status(200).json('yes');
@@ -369,7 +382,15 @@ class Web {
     // transfers and public mining // transfers and public mining // transfers and public mining // transfers and public mining // transfers and public mining
 
     postCheck = (req, res, next) => {
-        if(!req.body.main || this.blockchain.ec.keyFromPrivate(req.body.main, 'hex').getPublic('hex') !== this.blockchain.address|| !req.body.text && !req.file){
+        if(!req.body.text && !req.file || !req.body.main || req.body.title.length > 100 || this.blockchain.ec.keyFromPrivate(req.body.main, 'hex').getPublic('hex') !== this.blockchain.address){
+            return res.status(400).json('error');
+        } else {
+            next();
+        }
+    }
+
+    replyCheck = (req, res, next) => {
+        if(!req.body.text){
             return res.status(400).json('error');
         } else {
             next();
@@ -435,6 +456,23 @@ class Web {
     handleTransferNode = (req, res, next) => {
         if(!req.body.main || typeof(req.body.main) !== 'string' || !req.body.amount || req.body.amount <= 0 || typeof(req.body.amount) !== "number"){
             return res.status(400).json('error');
+        } else {
+            next();
+        }
+    }
+
+    handleTransaction = (req, res, next) => {
+        if(!req.body.main || typeof(req.body.main) !== 'string' || !req.body.address || typeof(req.body.address) !== 'string' || !req.body.amount || req.body.amount <= 0 || typeof(req.body.amount) !== "number"){
+            return res.status(400).json('error');
+        } else {
+            next();
+        }
+    }
+
+    handleBalance = async (req, res, next) => {
+        let mainBalance = await this.blockchain.getBalance(this.blockchain.ec.keyFromPrivate(req.body.main, 'hex').getPublic('hex'));
+        if(mainBalance < req.body.amount){
+            return res.status(400).json('amount is higher than your balance');
         } else {
             next();
         }

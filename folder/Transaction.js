@@ -52,7 +52,7 @@ class Transactions {
         if(!transaction.fromAddress || !transaction.toAddress){
             console.log("must include addresses");
             return false;
-        } else if(transaction.fromAddress === 'REWARD' || transaction.fromAddress === 'TRANSFER'){
+        } else if(transaction.fromAddress === 'REWARD' || transaction.fromAddress === 'TRANSFER' || transaction.fromAddress === 'GIFT'){
             return true;
         } else if(!transaction.signature || !transaction.signature.length){
             throw new Error('no signature in this transaction');

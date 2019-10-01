@@ -220,8 +220,19 @@ class Blockchain {
 
     // save a post on DB
     async postDB(post){
-        const res = await new Post({ text: post.text, media: post.media }).save();
+        const res = await new Post({ title: post.title, text: post.text, media: post.media }).save();
         return res;
+    }
+
+    async replyDB(data){
+        const res = await Post.findOne({_id: data.post}).exec();
+        if(res){
+            res.reply.push(data.reply);
+            res.save();
+            return res;
+        } else {
+            return null;
+        }
     }
 
     async treeDB(tree){

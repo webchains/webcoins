@@ -2,9 +2,10 @@ const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate');
 
 const PostSchema = new mongoose.Schema({
-    address: String,
+    title: String,
     text: String,
-    media: String
+    media: String,
+    reply: Array
 }, {timestamps: {createdAt: true}});
 
 PostSchema.plugin(mongoosePaginate);
