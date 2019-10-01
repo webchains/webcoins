@@ -5,33 +5,37 @@ const crypto = require('crypto');
 
 const peerAddress = {httpurl: process.env.PEERHTTPURL, wsurl: process.env.PEERWSURL};
 
+const internalMineTime = 30000;
+
+const externalMineInterval = 43200000;
+
 function mineDifficulty(startTime, endTime, difficulty){
     let changeDifficulty = difficulty;
     if(changeDifficulty < 1){
         changeDifficulty = 1;
-        return changeDifficulty;
-    } else if(endTime - startTime > 30000){
+    } else if(endTime - startTime > internalMineTime){
         changeDifficulty = changeDifficulty - 1;
-        return changeDifficulty;
-    } else if(endTime - startTime < 30000){
+    } else if(endTime - startTime < internalMineTime){
         changeDifficulty = changeDifficulty + 1;
-        return changeDifficulty;
     }
+    let changeReward = changeDifficulty * 2;
+    return {difficulty: changeDifficulty, reward: changeReward};
 }
 
 function minerDifficulty(difficulty){
     let changeDifficulty = difficulty;
-    let randomDifficulty = Math.floor(Math.random() * 2);
+    let randomNum = Math.floor(Math.random() * 2);
     if(changeDifficulty < 1){
         changeDifficulty = 1;
-        return changeDifficulty;
-    } else if(randomDifficulty){
+    } else if(randomNum){
         changeDifficulty = changeDifficulty + 1;
-        return changeDifficulty;
-    } else if(!randomDifficulty){
+    } else if(!randomNum){
         changeDifficulty = changeDifficulty - 1;
-        return changeDifficulty;
     }
+    let changeReward = changeDifficulty / 5;
+    let expireTime = Date.now() + externalMineInterval;
+    let expireDate = new Date(expireTime);
+    return {difficulty: changeDifficulty, reward: changeReward, expireTime, expireDate};
 }
 
 // checking and making folders-------------------------------------------------------------------------
@@ -188,9 +192,9 @@ function startFunc(data){
     } else if(data === 'externalState'){
         let difficulty = 3;
         let reward = difficulty / 5;
-        let intervalExpireTime = Date.now() + 86400000;
-        let intervalExpireDate = new Date(intervalExpireTime);
-        return {difficulty, reward, expireTime: intervalExpireTime, expireDate: intervalExpireDate};
+        let expireTime = Date.now() + 86400000;
+        let expireDate = new Date(expireTime);
+        return {difficulty, reward, expireTime, expireDate};
     } else if(data === 'http/ws'){
         let address = {url: process.env.DOMAIN, httpurl: `http://${process.env.DOMAIN}:${process.env.PORT}`, wsurl: `ws://${process.env.DOMAIN}:${process.env.PORT}`};
         address.hash = md5(address.httpurl + address.wsurl);

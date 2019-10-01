@@ -51,4 +51,4 @@ setInterval(() => {
     console.log(struct.session);
     assem.check();
     blockchain.timed();
-}, 86400000);
+}, 43200000);

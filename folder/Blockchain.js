@@ -11,7 +11,7 @@ const SHA256 = require('js-sha256');
 const Tree = require('../model/Tree.js');
 const Trees = require('./Tree.js');
 const Post = require('../model/Post.js');
-const {startFunc, mineDifficulty, helpReward} = require('../config.js');
+const {startFunc, mineDifficulty, helpReward, minerDifficulty} = require('../config.js');
 
 class Blockchain {
     constructor(checksum){
@@ -35,24 +35,6 @@ class Blockchain {
         this.pending = [new Transactions("REWARD", "EVERYONE", 0)];
         this.latest = null;
         this.current = null;
-    }
-    
-    timed(){
-        let randomNum = Math.floor(Math.random() * 2);
-        if(this.externalState.difficulty > 1 && this.externalState.difficulty < 6){
-            if(randomNum){
-                this.externalState.difficulty = this.externalState.difficulty + 1;
-            } else {
-                this.externalState.difficulty = this.externalState.difficulty - 1;
-            }
-        } else if(this.externalState.difficulty <= 1){
-            this.externalState.difficulty = this.externalState.difficulty + 1;
-        } else if(this.externalState.difficulty >= 6){
-            this.externalState.difficulty = this.externalState.difficulty - 1;
-        }
-        this.externalState.reward = this.externalState.difficulty / 5;
-        this.externalState.expireTime = Date.now() + 86400000;
-        this.externalState.expireDate = new Date(this.externalState.expireTime);
     }
 
     resetData(){
@@ -194,9 +176,8 @@ class Blockchain {
                 this.helpFunc(peer);
             }
             console.log(`done with rewarding the miner, on block#${this.current} now`);
-            this.internalState.difficulty = mineDifficulty(start, end, this.internalState.difficulty);
-            this.internalState.reward = this.internalState.difficulty * 2;
-            peer.broadcastState({difficulty: this.internalState.difficulty, reward: this.internalState.reward});
+            this.internalState = mineDifficulty(start, end, this.internalState.difficulty);
+            peer.broadcastState(this.internalState);
             console.log('broadcasted to peers');
             return true;
         } else {
@@ -465,6 +446,10 @@ async getChain(){
     let transactions = await this.getTransactions();
     let trees = await this.getTrees();
     return {blocks, transactions, trees};
+}
+
+timed(){
+    this.externalState = minerDifficulty(this.externalState.difficulty);
 }
 }
 
