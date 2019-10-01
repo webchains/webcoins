@@ -794,15 +794,6 @@ class Web {
     async startGenesisBlock(){
         this.sockets.forEach(socket => {socket.terminate();});
         this.sockets = [];
-        this.blockchain.updates = [];
-        this.blockchain.name = process.env.NAME;
-        this.blockchain.about = process.env.ABOUT;
-        this.blockchain.genesisAddress = null;
-        this.blockchain.count = {transaction: 0, block: 0, tree: 0};
-        this.blockchain.internalState = startFunc('internalState');
-        this.blockchain.pending = [new Transactions("REWARD", "EVERYONE", 0)];
-        this.blockchain.latest = null;
-        this.blockchain.current = null;
         await this.blockchain.removeDB();
         this.blockchain.createGenesisBlock();
     }

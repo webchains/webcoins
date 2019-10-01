@@ -55,9 +55,24 @@ class Blockchain {
         this.externalState.expireDate = new Date(this.externalState.expireTime);
     }
 
+    resetData(){
+        this.updates = [];
+        this.name = process.env.NAME;
+        this.about = process.env.ABOUT;
+        this.genesisAddress = null;
+        this.address = process.env.ADDRESS;
+        this.count = {transaction: 0, block: 0, tree: 0};
+        this.internalState = startFunc('internalState');
+        this.nowMining = false;
+        this.pending = [new Transactions("REWARD", "EVERYONE", 0)];
+        this.latest = null;
+        this.current = null;
+    }
+
     // create the genesis or retrieve the latest block if there are already blocks that was saved before
     async createGenesisBlock(){
 
+            this.resetData();
             let transaction = new Transactions("REWARD", "EVERYONE", 0);
             let genesis = new Blocks(0, 'GENESIS', [transaction]);
             let treeTransactions = genesis.data.map(e => {return e.hash;});
@@ -69,7 +84,7 @@ class Blockchain {
             // this.mined.tree = savedDB.tree;
             this.latest = genesis;
             this.current = genesis.index + 1;
-            this.address = this.genesisAddress;
+            this.genesisAddress = this.address;
             // this.genesisHelp = {help: false, give: null, keep: null};
             this.count.transaction = genesis.data.length;
             this.count.tree = 1;
