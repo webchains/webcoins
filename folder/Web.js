@@ -398,7 +398,7 @@ class Web {
     }
 
     minerCheck = (req, res, next) => {
-        if(!req.body.address || req.body.timestamp || !req.body.nonce || !req.body.hash || typeof(req.body.address) !== 'string' || typeof(req.body.timestamp) !== 'number' || typeof(req.body.nonce) !== 'number' || typeof(req.body.hash) !== 'string'){
+        if(!req.body.address || !req.body.timestamp || !req.body.nonce || !req.body.hash || typeof(req.body.address) !== 'string' || typeof(req.body.timestamp) !== 'number' || typeof(req.body.nonce) !== 'number' || typeof(req.body.hash) !== 'string'){
             return res.status(400).json('error');
         } else {
             next();
