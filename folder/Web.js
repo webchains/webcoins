@@ -993,7 +993,7 @@ class Web {
 
     // add transaction
     async checkTransaction(transaction){
-        if(transaction.transaction.fromAddress !== 'REWARD'){
+        if(transaction.transaction.fromAddress !== 'REWARD' || transaction.transaction.fromAddress !== 'TRANSFER' || transaction.transaction.fromAddress !== 'GIFT'){
             let balance = await this.blockchain.getBalance(transaction.transaction.fromAddress);
             if(balance < transaction.transaction.amount || !Transactions.isTransactionValid(transaction.transaction)){
                 console.log('invalid transaction');
