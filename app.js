@@ -3,7 +3,7 @@ if(dotenv.error){
     console.log('there is an error with the .env file: ' + dotenv.error);
     process.exit(0);
 } else if(dotenv.parsed){
-    let configs = ['DOMAIN', 'ADDRESS', 'INDEX', 'NAME', 'ABOUT', 'HELP', 'GIVE', 'PEERHTTPURL', 'PEERWSURL', 'STARTUPDOWNLOAD', 'RANDOM', 'PORT', 'LIMITCONNECTIONS', 'SECUREDOMAIN', 'SECURESERVER', 'CERTFILE', 'CERTKEY', 'PROXY', 'HEARTBEAT'];
+    let configs = ['DOMAIN', 'ADDRESS', 'INDEX', 'NAME', 'ABOUT', 'HELP', 'GIVE', 'PEERHTTPURL', 'PEERWSURL', 'STARTUPDOWNLOAD', 'RANDOM', 'PORT', 'LIMITCONNECTIONS', 'SECUREDOMAIN', 'SECURESERVER', 'CERTFILE', 'CERTKEY', 'PROXY', 'HEARTBEAT', 'INDEX', 'REDIRECT'];
     for(const data in dotenv.parsed){
         if(!dotenv.parsed[data] || !configs.includes(data)){
             console.log('all main data is required in the .env file, make sure all the data is set in the .env file, exitting');

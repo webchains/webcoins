@@ -382,7 +382,7 @@ class Web {
     // transfers and public mining // transfers and public mining // transfers and public mining // transfers and public mining // transfers and public mining
 
     postCheck = (req, res, next) => {
-        if(!req.body.text && !req.file || !req.body.main || req.body.title.length > 100 || this.blockchain.ec.keyFromPrivate(req.body.main, 'hex').getPublic('hex') !== this.blockchain.address){
+        if(!req.body.text && !req.file || !req.body.main || !req.body.title || req.body.title.length > 100 || this.blockchain.ec.keyFromPrivate(req.body.main, 'hex').getPublic('hex') !== this.blockchain.address){
             return res.status(400).json('error');
         } else {
             next();
