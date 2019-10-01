@@ -9,6 +9,10 @@ const internalMineTime = 30000;
 
 const externalMineInterval = 43200000;
 
+const internalRewardMultiplyRate = 2;
+
+const externalRewardDivideRate = 5;
+
 function mineDifficulty(startTime, endTime, difficulty){
     let changeDifficulty = difficulty;
     if(changeDifficulty < 1){
@@ -18,7 +22,7 @@ function mineDifficulty(startTime, endTime, difficulty){
     } else if(endTime - startTime < internalMineTime){
         changeDifficulty = changeDifficulty + 1;
     }
-    let changeReward = changeDifficulty * 2;
+    let changeReward = changeDifficulty * internalRewardMultiplyRate;
     return {difficulty: changeDifficulty, reward: changeReward};
 }
 
@@ -32,7 +36,7 @@ function minerDifficulty(difficulty){
     } else if(!randomNum){
         changeDifficulty = changeDifficulty - 1;
     }
-    let changeReward = changeDifficulty / 5;
+    let changeReward = changeDifficulty / externalRewardDivideRate;
     let expireTime = Date.now() + externalMineInterval;
     let expireDate = new Date(expireTime);
     return {difficulty: changeDifficulty, reward: changeReward, expireTime, expireDate};
