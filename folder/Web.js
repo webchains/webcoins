@@ -599,10 +599,10 @@ class Web {
         } else {
             let url = new URL(peer.wsurl);
             let queryParams = new URLSearchParams(url.search);
-            queryParams.set('url', peer.url);
-            queryParams.set('hash', peer.hash);
-            queryParams.set('httpurl', peer.httpurl);
-            queryParams.set('wsurl', peer.wsurl);
+            queryParams.set('url', this.address.url);
+            queryParams.set('hash', this.address.hash);
+            queryParams.set('httpurl', this.address.httpurl);
+            queryParams.set('wsurl', this.address.wsurl);
             const socket = new WebSocket(url.href + '?' + queryParams.toString());
     
             socket.on('open', async () => {
@@ -640,10 +640,10 @@ class Web {
 
         let url = new URL(peer.wsurl);
         let queryParams = new URLSearchParams(url.search);
-        queryParams.set('url', peer.url);
-        queryParams.set('hash', peer.hash);
-        queryParams.set('httpurl', peer.httpurl);
-        queryParams.set('wsurl', peer.wsurl);
+        queryParams.set('url', this.address.url);
+        queryParams.set('hash', this.address.hash);
+        queryParams.set('httpurl', this.address.httpurl);
+        queryParams.set('wsurl', this.address.wsurl);
         const socket = new WebSocket(url.href + '/?' + queryParams.toString());
         
         socket.on('open', () => {
