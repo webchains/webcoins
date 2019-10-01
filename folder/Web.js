@@ -22,6 +22,7 @@ const Blocks = require('./Block.js');
 const Post = require('../model/Post.js');
 const Proof = require('./Proof.js');
 const multer = require('multer');
+const path = require('path');
 
 class Web {
     constructor(blockchain){
