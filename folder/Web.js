@@ -691,8 +691,8 @@ class Web {
                 if(this.sockets[i].beat){
                     clearInterval(this.sockets[i].beat);
                 }
-                // this.sockets[i].close();
-                this.sockets[i].terminate();
+                this.sockets[i].close();
+                // this.sockets[i].terminate();
                 this.sockets.splice(i, 1);
                 console.log('removed peer from broadcast');
                 // break;
@@ -795,8 +795,8 @@ class Web {
 
     async startGenesisBlock(){
         this.sockets.forEach(socket => {
-            // socket.close();
-            socket.terminate();
+            socket.close();
+            // socket.terminate();
         });
         this.sockets = [];
         await this.blockchain.removeDB();
