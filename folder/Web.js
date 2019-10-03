@@ -121,7 +121,7 @@ class Web {
 
         if(this.index === 'html'){
             this.app.get('/', (req, res) => {
-                return res.sendFile(path.resolve(__dirname + '../base/dist/index.html')); // potential update
+                return res.sendFile(path.resolve(__dirname, '../base/dist/index.html')); // potential update
                 // return res.status(200).json('webcoin');
             });
         } else if(this.index === 'standard'){
@@ -542,14 +542,14 @@ class Web {
             console.log('socket connected to server');
             socket.address = address;
             this.connectSocket(socket);
-            socket.on('error', error => {
-                console.log(error);
-                this.removeSocket(socket.address.hash);
-            });
-            socket.on('close', (code, reason) => {
-                console.log('peer disconnected', code, reason);
-                this.removeSocket(socket.address.hash);
-            });
+            // socket.on('error', error => {
+            //     console.log(error);
+            //     this.removeSocket(socket.address.hash);
+            // });
+            // socket.on('close', (code, reason) => {
+            //     console.log('peer disconnected', code, reason);
+            //     this.removeSocket(socket.address.hash);
+            // });
             /*
             if(!address.domain || !address.hash || !address.httpurl || !address.wsurl){
                 socket.close();
@@ -604,13 +604,15 @@ class Web {
             queryParams.set('httpurl', this.address.httpurl);
             queryParams.set('wsurl', this.address.wsurl);
             const socket = new WebSocket(url.href + '?' + queryParams.toString());
+            socket.address = peer;
     
             socket.on('open', async () => {
-                socket.address = peer;
                 await this.sendNode(socket);
                 this.sendVerify(socket);
                 this.broadcastPeer(peer);
                 this.connectSocket(socket);
+                this.sockets.push(socket);
+                console.log("Socket connected");
             });
             socket.on('error', error => {
                 console.log(error);
@@ -645,10 +647,12 @@ class Web {
         queryParams.set('httpurl', this.address.httpurl);
         queryParams.set('wsurl', this.address.wsurl);
         const socket = new WebSocket(url.href + '/?' + queryParams.toString());
+        socket.address = peer;
         
         socket.on('open', () => {
-            socket.address = peer;
             this.connectSocket(socket);
+            this.sockets.push(socket);
+            console.log("Socket connected");
         });
         socket.on('error', error => {
             console.log(error);
@@ -675,15 +679,25 @@ class Web {
             }, 30000);
         }
 
-        // push the socket too the socket array
-        this.sockets.push(socket);
-        console.log("Socket connected");
-
         // register a message event listener to the socket
         this.messageHandler(socket);
     }
 
     removeSocket(peer){
+        this.server.clients.forEach(socket => {
+            if(socket.address.url === peer || socket.address.httpurl === peer || socket.address.wsurl === peer || socket.address.hash === peer){
+                // this.sendPurge(this.sockets[i]);
+                // clearInterval(this.sockets[i].beat);
+                if(socket.beat){
+                    clearInterval(socket.beat);
+                }
+                socket.close();
+                // this.sockets[i].terminate();
+                console.log('removed peer from broadcast');
+                // break;
+                return true;
+            }
+        });
         for(let i = 0; i < this.sockets.length; i++){
             if(this.sockets[i].address.url === peer || this.sockets[i].address.httpurl === peer || this.sockets[i].address.wsurl === peer || this.sockets[i].address.hash === peer){
                 // this.sendPurge(this.sockets[i]);
@@ -794,6 +808,9 @@ class Web {
     }
 
     async startGenesisBlock(){
+        this.server.clients.forEach(socket =>{
+            socket.close();
+        });
         this.sockets.forEach(socket => {
             socket.close();
             // socket.terminate();
@@ -815,52 +832,77 @@ class Web {
     
     // broadcast peer to peers
     broadcastPeer(peer){
+        this.server.clients.forEach(socket => {
+            socket.send(JSON.stringify({
+                type: this.MESSAGE_TYPE.peer,
+                peer: peer
+              }));
+        });
         this.sockets.forEach(socket => {
             socket.send(JSON.stringify({
                 type: this.MESSAGE_TYPE.peer,
                 peer: peer
-              })
-          );
+              }));
         });
     }
 
     broadcastUpdate(update){
+        this.server.clients.forEach(socket => {
+            socket.send(JSON.stringify({
+                type: this.MESSAGE_TYPE.update,
+                update: update
+              }));
+        });
         this.sockets.forEach(socket => {
             socket.send(JSON.stringify({
                 type: this.MESSAGE_TYPE.update,
                 update: update
-              })
-          );
+              }));
         });
     }
 
     broadcastTransaction(transaction){
+        this.server.clients.forEach(socket => {
+            socket.send(JSON.stringify({
+                type: this.MESSAGE_TYPE.transaction,
+                transaction: transaction
+              }));
+        });
         this.sockets.forEach(socket => {
             socket.send(JSON.stringify({
                 type: this.MESSAGE_TYPE.transaction,
                 transaction: transaction
-              })
-          );
+              }));
         });
     }
 
     broadcastBlock(block){
+        this.server.clients.forEach(socket => {
+            socket.send(JSON.stringify({
+                type: this.MESSAGE_TYPE.block,
+                block: block
+              }));
+        });
         this.sockets.forEach(socket => {
             socket.send(JSON.stringify({
                 type: this.MESSAGE_TYPE.block,
                 block: block
-              })
-          );
+              }));
         });
     }
 
     broadcastState(state){
+        this.server.clients.forEach(socket => {
+            socket.send(JSON.stringify({
+                type: this.MESSAGE_TYPE.state,
+                state: state
+              }));
+        });
         this.sockets.forEach(socket => {
             socket.send(JSON.stringify({
                 type: this.MESSAGE_TYPE.state,
                 state: state
-              })
-          );
+              }));
         });
     }
 
