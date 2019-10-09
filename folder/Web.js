@@ -286,6 +286,9 @@ class Web {
             if(Transactions.isTransactionValid(transaction)){
                 this.broadcastTransaction({transaction: transaction, peer: this.address});
                 this.blockchain.pending.push(transaction);
+                if(!this.blockchain.nowMining || this.blockchain.pending.length > 15){
+                    this.blockchain.mine(this);
+                }
                 return res.status(200).json(transaction);
             } else {
                 return res.status(400).json('invalid transaction');
@@ -296,6 +299,9 @@ class Web {
             if(Transactions.isTransactionValid(transaction)){
                 this.broadcastTransaction({transaction: transaction, peer: this.address});
                 this.blockchain.pending.push(transaction);
+                if(!this.blockchain.nowMining || this.blockchain.pending.length > 15){
+                    this.blockchain.mine(this);
+                }
                 return res.status(200).json(transaction);
             } else {
                 return res.status(400).json('invalid transfer');
@@ -310,6 +316,9 @@ class Web {
             if(Transactions.isTransactionValid(transaction)){
                 this.broadcastTransaction({transaction: transaction, peer: this.address});
                 this.blockchain.pending.push(transaction);
+                if(!this.blockchain.nowMining || this.blockchain.pending.length > 15){
+                    this.blockchain.mine(this);
+                }
                 return res.status(200).json(transaction);
             } else {
                 return res.status(400).json('invalid transfer');
@@ -324,6 +333,9 @@ class Web {
                 if(mainData){
                     this.broadcastTransaction({transaction: transaction, peer: this.address});
                     this.blockchain.pending.push(transaction);
+                    if(!this.blockchain.nowMining || this.blockchain.pending.length > 15){
+                        this.blockchain.mine(this);
+                    }
                     return res.status(200).json(transaction);
                 } else {
                     return res.status(400).json('could not transfer');
@@ -339,6 +351,9 @@ class Web {
                 if(mainData){
                     this.broadcastTransaction({transaction: transaction, peer: this.address});
                     this.blockchain.pending.push(transaction);
+                    if(!this.blockchain.nowMining || this.blockchain.pending.length > 15){
+                        this.blockchain.mine(this);
+                    }
                     return res.status(200).json(transaction);
                 } else {
                     return res.status(400).json('could not transfer');
@@ -348,7 +363,7 @@ class Web {
             }
         });
         this.app.get('/mine', (req, res) => {
-            if(this.blockchain.nowMining){
+            if(this.blockchain.nowMining || this.blockchain.pending.length < 16){
                 return res.status(400).json('server is currently mining already');
             } else {
                 this.blockchain.mine(this);
@@ -366,6 +381,9 @@ class Web {
                 let transaction = new Transactions('GIFT', proof.address, this.blockchain.externalState.reward);
                 this.broadcastTransaction({transaction: transaction, peer: this.address});
                 this.blockchain.pending.push(transaction);
+                if(!this.blockchain.nowMining || this.blockchain.pending.length > 15){
+                    this.blockchain.mine(this);
+                }
                 return res.status(200).json('yes');
             }
         });
