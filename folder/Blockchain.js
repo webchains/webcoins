@@ -112,7 +112,7 @@ class Blockchain {
 
     async countTransactions(data){
         if(data === 'find'){
-            let count = await Transaction.find({}).lean(true).exec();
+            let count = await Transaction.find({}).lean(true).count().exec();
             return count.length;
         } else if(data === 'scan'){
             let count = await Transaction.countDocuments().exec();
@@ -125,7 +125,7 @@ class Blockchain {
 
     async countBlocks(data){
         if(data === 'find'){
-            let count = await Block.find({}).lean(true).exec();
+            let count = await Block.find({}).lean(true).count().exec();
             return count.length;
         } else if(data === 'scan'){
             let count = await Block.countDocuments().exec();
@@ -138,7 +138,7 @@ class Blockchain {
 
     async countTrees(data){
         if(data === 'find'){
-            let count = await Tree.find({}).lean(true).exec();
+            let count = await Tree.find({}).lean(true).count().exec();
             return count.length;
         } else if(data === 'scan'){
             let count = await Tree.countDocuments().exec();

@@ -52,7 +52,7 @@ class Web {
         this.limitConnections = Number(process.env.LIMITCONNECTIONS);
         this.dbRandom = process.env.RANDOM;
         this.dbName = 'mongodb://localhost:27017/' + md5(this.dbRandom);
-        this.sockets = [];
+        this.sockets = new Set();
         this.index = process.env.INDEX;
         if(this.index === 'redirect'){
             this.redirect = process.env.REDIRECT;
@@ -560,36 +560,6 @@ class Web {
             console.log('socket connected to server');
             socket.address = address;
             this.connectSocket(socket);
-            // socket.on('error', error => {
-            //     console.log(error);
-            //     this.removeSocket(socket.address.hash);
-            // });
-            // socket.on('close', (code, reason) => {
-            //     console.log('peer disconnected', code, reason);
-            //     this.removeSocket(socket.address.hash);
-            // });
-            /*
-            if(!address.domain || !address.hash || !address.httpurl || !address.wsurl){
-                socket.close();
-                // socket.terminate();
-            } else {
-                console.log('socket connected to server');
-                socket.on('open', () => {
-                    socket.address = address;
-                    this.connectSocket(socket);
-                });
-                socket.on('error', error => {
-                    console.log(error);
-                    clearInterval(socket.beat);
-                    this.removeSocket(socket.hash);
-                });
-                socket.on('close', (code, reason) => {
-                    console.log('peer disconnected', code, reason);
-                    clearInterval(socket.beat);
-                    this.removeSocket(socket.hash);
-                });
-            }
-            */
         });
 
         this.server.on('error', error => {
@@ -611,10 +581,10 @@ class Web {
     // first node // first node // first node // first node // first node // first node // first node // first node
 
     async connectNodePeer(peer){
-        let checkCount = await this.blockchain.countChain();
-        if(!checkCount){
-            await this.exitChain();
-        } else {
+        // let checkCount = await this.blockchain.countChain();
+        // if(!checkCount){
+        //     await this.exitChain();
+        // } else {
             let url = new URL(peer.wsurl);
             let queryParams = new URLSearchParams(url.search);
             queryParams.set('url', this.address.url);
@@ -629,20 +599,18 @@ class Web {
                 this.sendVerify(socket);
                 this.broadcastPeer(peer);
                 this.connectSocket(socket);
-                this.sockets.push(socket);
+                this.sockets.add(socket);
                 console.log("Socket connected");
             });
             socket.on('error', error => {
                 console.log(error);
-                // clearInterval(socket.beat);
-                this.removeSocket(socket.address.hash);
+                socket.close();
             });
             socket.on('close', (code, reason) => {
                 console.log('peer disconnected', code, reason);
-                // clearInterval(socket.beat);
-                this.removeSocket(socket.address.hash);
+                this.sockets.delete(socket);
             });
-        }
+        // }
     }
 
     // first node // first node // first node // first node // first node // first node // first node // first node
@@ -669,18 +637,16 @@ class Web {
         
         socket.on('open', () => {
             this.connectSocket(socket);
-            this.sockets.push(socket);
+            this.sockets.add(socket);
             console.log("Socket connected");
         });
         socket.on('error', error => {
             console.log(error);
-            // clearInterval(socket.beat);
-            this.removeSocket(socket.address.hash);
+            socket.close();
         });
         socket.on('close', (code, reason) => {
             console.log('peer disconnected', code, reason);
-            // clearInterval(socket.beat);
-            this.removeSocket(socket.address.hash);
+            this.sockets.delete(socket);
         });
     }
 
@@ -704,33 +670,24 @@ class Web {
     removeSocket(peer){
         this.server.clients.forEach(socket => {
             if(socket.address.url === peer || socket.address.httpurl === peer || socket.address.wsurl === peer || socket.address.hash === peer){
-                // this.sendPurge(this.sockets[i]);
-                // clearInterval(this.sockets[i].beat);
                 if(socket.beat){
                     clearInterval(socket.beat);
                 }
                 socket.close();
-                // this.sockets[i].terminate();
                 console.log('removed peer from broadcast');
-                // break;
                 return true;
             }
         });
-        for(let i = 0; i < this.sockets.length; i++){
-            if(this.sockets[i].address.url === peer || this.sockets[i].address.httpurl === peer || this.sockets[i].address.wsurl === peer || this.sockets[i].address.hash === peer){
-                // this.sendPurge(this.sockets[i]);
-                // clearInterval(this.sockets[i].beat);
-                if(this.sockets[i].beat){
-                    clearInterval(this.sockets[i].beat);
+        this.sockets.forEach(socket => {
+            if(socket.address.url === peer || socket.address.httpurl === peer || socket.address.wsurl === peer || socket.address.hash === peer){
+                if(socket.beat){
+                    clearInterval(socket.beat);
                 }
-                this.sockets[i].close();
-                // this.sockets[i].terminate();
-                this.sockets.splice(i, 1);
+                socket.close();
                 console.log('removed peer from broadcast');
-                // break;
                 return true;
             }
-        }
+        });
     }
 
     // connect and handle websocket // connect and handle websocket // connect and handle websocket // connect and handle websocket // connect and handle websocket
@@ -833,7 +790,6 @@ class Web {
             socket.close();
             // socket.terminate();
         });
-        this.sockets = [];
         await this.blockchain.removeDB();
         this.blockchain.createGenesisBlock();
     }
